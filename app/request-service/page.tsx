@@ -1,17 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function RequestServicePage() {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    service: "",
-    message: "",
+    name: '',
+    email: '',
+    phone: '',
+    message: '',
   });
-
-  const [submitted, setSubmitted] = useState(false);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -22,24 +19,18 @@ export default function RequestServicePage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    await fetch("/api/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    await fetch('/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     });
 
-    setSubmitted(true);
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-      service: "",
-      message: "",
-    });
+    alert('Request submitted!');
+    setForm({ name: '', email: '', phone: '', message: '' });
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: "40px auto" }}>
+    <div style={{ maxWidth: 500, margin: '40px auto' }}>
       <h1>Request a Service</h1>
 
       <form onSubmit={handleSubmit}>
@@ -50,6 +41,7 @@ export default function RequestServicePage() {
           onChange={handleChange}
           required
         />
+
         <br /><br />
 
         <input
@@ -59,6 +51,7 @@ export default function RequestServicePage() {
           onChange={handleChange}
           required
         />
+
         <br /><br />
 
         <input
@@ -66,4 +59,23 @@ export default function RequestServicePage() {
           placeholder="Phone"
           value={form.phone}
           onChange={handleChange}
+        />
 
+        <br /><br />
+
+        <textarea
+          name="message"
+          placeholder="Describe the job"
+          value={form.message}
+          onChange={handleChange}
+        />
+
+        <br /><br />
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
+}
+
+    
