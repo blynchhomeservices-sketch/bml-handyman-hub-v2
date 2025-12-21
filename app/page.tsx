@@ -1,75 +1,34 @@
-"use client";
-
-import { useState } from "react";
-
-export default function Home() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    trade: "",
-  });
-
-  const [msg, setMsg] = useState("");
-
-  function onChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg("Submitting...");
-
-    const res = await fetch("/api/contractors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      setMsg(data.error || "Error");
-      return;
-    }
-
-    setMsg("✅ Submitted successfully");
-    setForm({ name: "", email: "", phone: "", trade: "" });
-  }
-
+export default function HomePage() {
   return (
-    <main style={{ maxWidth: 500, margin: "40px auto" }}>
-      <h1>Join Contractor</h1>
+    <main style={{ maxWidth: 700, margin: "60px auto", textAlign: "center" }}>
+      <h1>BML Handyman Hub</h1>
+      <p>Connect customers with trusted contractors.</p>
 
-      <form onSubmit={submit} style={{ display: "grid", gap: 10 }}>
-        <input
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={onChange}
-        />
-        <input
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={onChange}
-        />
-        <input
-          name="phone"
-          placeholder="Phone"
-          value={form.phone}
-          onChange={onChange}
-        />
-        <input
-          name="trade"
-          placeholder="Trade"
-          value={form.trade}
-          onChange={onChange}
-        />
-        <button type="submit">Submit</button>
-      </form>
+      <div style={{ display: "flex", gap: 20, justifyContent: "center", marginTop: 30 }}>
+        <a
+          href="/request-service"
+          style={{
+            padding: "12px 18px",
+            border: "1px solid #000",
+            borderRadius: 8,
+            textDecoration: "none",
+          }}
+        >
+          Request a Service
+        </a>
 
-      <p style={{ marginTop: 12 }}>{msg}</p>
+        <a
+          href="/join-contractor"
+          style={{
+            padding: "12px 18px",
+            border: "1px solid #000",
+            borderRadius: 8,
+            textDecoration: "none",
+          }}
+        >
+          Join as Contractor
+        </a>
+      </div>
     </main>
   );
 }
