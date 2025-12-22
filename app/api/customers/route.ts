@@ -1,46 +1,32 @@
-import { sql } from '@vercel/postgres';
+import { NextResponse } from "next/server";
+import { sql } from "@vercel/postgres";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    const body = await request.json();
+    const { name, email, phone, service, message } = body;
 
-    const {
-      name,
-      email,
-      phone,
-      address,
-      service,
-      notes
-    } = body;
-
-    await sql`
-      INSERT INTO customers (
-        name,
-        email,
-        phone,
-        address,
-        service,
-        notes
-      )
-      VALUES (
-        ${name},
-        ${email},
-        ${phone},
-        ${address},
-        ${service},
-        ${notes}
+    if (!name || !email || !service) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
       );
+    }
+
+    const result = await sql`
+      INSERT INTO customers (name, email, phone, service, message)
+      VALUES (${name}, ${email}, ${phone || null}, ${service}, ${message || null})
+      RETURNING id, created_at;
     `;
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200 }
+    return NextResponse.json(
+      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
+      { status: 201 }
     );
-  } catch (error) {
-    console.error('Customer insert error:', error);
-
-    return new Response(
-      JSON.stringify({ success: false }),
+  } catch (err: any) {
+    console.error("CUSTOMERS POST ERROR:", err);
+    return NextResponse.json(
+      { error: "Server error saving customer request" },
       { status: 500 }
     );
   }
