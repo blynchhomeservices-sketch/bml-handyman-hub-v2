@@ -1,35 +1,46 @@
-import { NextResponse } from "next/server";
+import { sql } from '@vercel/postgres';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
+    const body = await req.json();
 
-    const { name, email, phone, service, message } = body;
-
-    if (!name || !email || !service) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // For now we just log it (later this can go to DB, email, etc.)
-    console.log("New customer request:", {
+    const {
       name,
       email,
       phone,
+      address,
       service,
-      message,
-    });
+      notes
+    } = body;
 
-    return NextResponse.json(
-      { success: true, message: "Customer request received" },
+    await sql`
+      INSERT INTO customers (
+        name,
+        email,
+        phone,
+        address,
+        service,
+        notes
+      )
+      VALUES (
+        ${name},
+        ${email},
+        ${phone},
+        ${address},
+        ${service},
+        ${notes}
+      );
+    `;
+
+    return new Response(
+      JSON.stringify({ success: true }),
       { status: 200 }
     );
   } catch (error) {
-    console.error("Customer API error:", error);
-    return NextResponse.json(
-      { error: "Server error" },
+    console.error('Customer insert error:', error);
+
+    return new Response(
+      JSON.stringify({ success: false }),
       { status: 500 }
     );
   }
