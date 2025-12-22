@@ -1,30 +1,33 @@
 import { NextResponse } from "next/server";
+import { sql } from "@vercel/postgres";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
+    const body = await request.json();
+    const { name, email, phone, trade, message } = body;
 
-    const name = String(body?.name ?? "").trim();
-    const email = String(body?.email ?? "").trim();
-    const phone = String(body?.phone ?? "").trim();
-    const trade = String(body?.trade ?? "").trim();
-
-    if (!name || !email || !phone || !trade) {
+    if (!name || !email || !trade) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // For now we just confirm receipt
+    const result = await sql`
+      INSERT INTO contractors (name, email, phone, trade, message)
+      VALUES (${name}, ${email}, ${phone || null}, ${trade}, ${message || null})
+      RETURNING id, created_at;
+    `;
+
     return NextResponse.json(
-      { ok: true },
+      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
       { status: 201 }
     );
-  } catch {
+  } catch (err: any) {
+    console.error("CONTRACTORS POST ERROR:", err);
     return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
+      { error: "Server error saving contractor request" },
+      { status: 500 }
     );
   }
 }
