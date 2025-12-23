@@ -1,53 +1,36 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
-
-const sql = postgres(process.env.DATABASE_URL!, {
-  ssl: "require",
-});
+import { pool } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { name, email, phone, trade, message } = body;
 
-    const name = (body?.name ?? "").toString().trim();
-    const email = (body?.email ?? "").toString().trim();
-    const phone = (body?.phone ?? "").toString().trim();
-    const trade = (
-      body?.trade ??
-      body?.service ??
-      body?.category ??
-      ""
-    )
-      .toString()
-      .trim();
-
-    if (!name || !email || !phone || !trade) {
+    if (!name || !email || !trade) {
       return NextResponse.json(
-        {
-          error: "Missing required fields",
-          received: {
-            name: !!name,
-            email: !!email,
-            phone: !!phone,
-            trade: !!trade,
-          },
-        },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const result = await sql`
-      INSERT INTO contractors (name, email, phone, trade)
-      VALUES (${name}, ${email}, ${phone}, ${trade})
-      RETURNING id;
-    `;
+    const result = await pool.query(
+      `
+      INSERT INTO contractors (name, email, phone, trade, message)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, created_at
+      `,
+      [name, email, phone || null, trade, message || null]
+    );
 
     return NextResponse.json(
-      { success: true, id: result.rows[0]?.id },
+      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("CONTRACTORS API ERROR:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error("CONTRACTORS POST ERROR:", err);
+    return NextResponse.json(
+      { error: "Server error saving contractor application" },
+      { status: 500 }
+    );
   }
 }
