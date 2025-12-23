@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { sql } from "@vercel/postgres";
+import postgres from "postgres";
+
+const sql = postgres(process.env.DATABASE_URL!, {
+  ssl: "require",
+});
 
 export async function POST(request: Request) {
   try {
@@ -13,21 +17,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await sql`
+    await sql`
       INSERT INTO customers (name, email, phone, service, message)
-      VALUES (${name}, ${email}, ${phone || null}, ${service}, ${message || null})
-      RETURNING id, created_at;
+      VALUES (
+        ${name},
+        ${email},
+        ${phone || null},
+        ${service},
+        ${message || null}
+      )
     `;
 
-    return NextResponse.json(
-      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
-      { status: 201 }
-    );
-  } catch (err: any) {
-    console.error("CUSTOMERS POST ERROR:", err);
-    return NextResponse.json(
-      { error: "Server error saving customer request" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("CUSTOMER API ERROR:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
