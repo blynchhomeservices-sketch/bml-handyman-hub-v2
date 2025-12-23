@@ -1,61 +1,35 @@
 import { NextResponse } from "next/server";
-import postgres from "postgres";
-
-const sql = postgres(process.env.DATABASE_URL || "", {
-  ssl: "require",
-});
+import { pool } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const { name, email, phone, service, message } = body;
 
-    // Accept multiple possible field names (so your form can vary and still work)
-    const name = (body?.name ?? body?.fullName ?? "").toString().trim();
-    const email = (body?.email ?? "").toString().trim();
-    const phone = (body?.phone ?? body?.phoneNumber ?? "").toString().trim();
-
-    // service/trade/category - accept any of these
-    const service = (
-      body?.service ??
-      body?.trade ??
-      body?.category ??
-      ""
-    )
-      .toString()
-      .trim();
-
-    const message = (body?.message ?? body?.details ?? "").toString().trim();
-
-    // Basic validation (this is likely why you’re getting POST 400 right now)
-    if (!name || !email || !phone || !service) {
+    if (!name || !email || !service) {
       return NextResponse.json(
-        {
-          error: "Missing required fields",
-          required: ["name", "email", "phone", "service"],
-          received: { name, email, phone, service, message },
-        },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Insert into Neon customers table
-    const result = await sql`
+    const result = await pool.query(
+      `
       INSERT INTO customers (name, email, phone, service, message)
-      VALUES (${name}, ${email}, ${phone}, ${service}, ${message})
-      RETURNING id, name, email, phone, service, message, created_at
-    `;
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id, created_at
+      `,
+      [name, email, phone || null, service, message || null]
+    );
 
     return NextResponse.json(
-      { ok: true, customer: result[0] },
+      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
       { status: 201 }
     );
-  } catch (error: any) {
-    console.error("CUSTOMERS_API_ERROR:", error);
+  } catch (err) {
+    console.error("CUSTOMERS POST ERROR:", err);
     return NextResponse.json(
-      {
-        error: "Server error",
-        detail: error?.message ?? String(error),
-      },
+      { error: "Server error saving customer request" },
       { status: 500 }
     );
   }
