@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import postgres from "postgres";
 
-const sql = postgres(process.env.DATABASE_URL!, {
+const sql = postgres(process.env.DATABASE_URL || "", {
   ssl: "require",
 });
 
@@ -9,58 +9,54 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const name = (body?.name ?? "").toString().trim();
+    // Accept multiple possible field names (so your form can vary and still work)
+    const name = (body?.name ?? body?.fullName ?? "").toString().trim();
     const email = (body?.email ?? "").toString().trim();
-    const phoneRaw = body?.phone ?? body?.phoneNumber ?? "";
-    const phone = phoneRaw ? phoneRaw.toString().trim() : null;
+    const phone = (body?.phone ?? body?.phoneNumber ?? "").toString().trim();
 
-    // Accept common variations from the form
+    // service/trade/category - accept any of these
     const service = (
       body?.service ??
-      body?.category ??
-      body?.jobType ??
       body?.trade ??
+      body?.category ??
       ""
     )
       .toString()
       .trim();
 
-    const message = (
-      body?.message ??
-      body?.details ??
-      body?.description ??
-      body?.notes ??
-      ""
-    )
-      .toString()
-      .trim();
+    const message = (body?.message ?? body?.details ?? "").toString().trim();
 
-    if (!name || !email || !service) {
+    // Basic validation (this is likely why you’re getting POST 400 right now)
+    if (!name || !email || !phone || !service) {
       return NextResponse.json(
         {
           error: "Missing required fields",
-          received: {
-            name: !!name,
-            email: !!email,
-            service: !!service,
-          },
+          required: ["name", "email", "phone", "service"],
+          received: { name, email, phone, service, message },
         },
         { status: 400 }
       );
     }
 
+    // Insert into Neon customers table
     const result = await sql`
       INSERT INTO customers (name, email, phone, service, message)
-      VALUES (${name}, ${email}, ${phone}, ${service}, ${message || null})
-      RETURNING id;
+      VALUES (${name}, ${email}, ${phone}, ${service}, ${message})
+      RETURNING id, name, email, phone, service, message, created_at
     `;
 
     return NextResponse.json(
-      { success: true, id: result.rows[0]?.id },
+      { ok: true, customer: result[0] },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("CUSTOMER API ERROR:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (error: any) {
+    console.error("CUSTOMERS_API_ERROR:", error);
+    return NextResponse.json(
+      {
+        error: "Server error",
+        detail: error?.message ?? String(error),
+      },
+      { status: 500 }
+    );
   }
 }
