@@ -1,36 +1,22 @@
 import { NextResponse } from "next/server";
-import { pool } from "../../../lib/db";
+import { pool } from "@/app/lib/db";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-
-    const name = body.name?.toString().trim();
-    const email = body.email?.toString().trim();
-    const phone = body.phone?.toString().trim();
-    const service = body.service?.toString().trim();
-    const message = body.message?.toString().trim() || null;
-
-    if (!name || !email || !phone || !service) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const { name, email, phone, service, address, details } = body;
 
     await pool.query(
-      `
-      INSERT INTO customers (name, email, phone, service, message)
-      VALUES ($1, $2, $3, $4, $5)
-      `,
-      [name, email, phone, service, message]
+      `INSERT INTO customers (name, email, phone, service, address, details)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [name, email, phone, service, address, details]
     );
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("CUSTOMERS API ERROR:", error);
+    console.error("Customer insert error:", error);
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Failed to save customer request" },
       { status: 500 }
     );
   }
