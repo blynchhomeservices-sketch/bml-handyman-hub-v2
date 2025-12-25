@@ -1,35 +1,36 @@
 import { NextResponse } from "next/server";
-import { pool } from "@/lib/db";
+import { pool } from "../../../lib/db";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, phone, service, message } = body;
 
-    if (!name || !email || !service) {
+    const name = body.name?.toString().trim();
+    const email = body.email?.toString().trim();
+    const phone = body.phone?.toString().trim();
+    const service = body.service?.toString().trim();
+    const message = body.message?.toString().trim() || null;
+
+    if (!name || !email || !phone || !service) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const result = await pool.query(
+    await pool.query(
       `
       INSERT INTO customers (name, email, phone, service, message)
       VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, created_at
       `,
-      [name, email, phone || null, service, message || null]
+      [name, email, phone, service, message]
     );
 
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("CUSTOMERS API ERROR:", error);
     return NextResponse.json(
-      { ok: true, id: result.rows[0].id, created_at: result.rows[0].created_at },
-      { status: 201 }
-    );
-  } catch (err) {
-    console.error("CUSTOMERS POST ERROR:", err);
-    return NextResponse.json(
-      { error: "Server error saving customer request" },
+      { error: "Server error" },
       { status: 500 }
     );
   }
