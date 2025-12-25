@@ -6,7 +6,7 @@ declare global {
 }
 
 export const pool =
-  global.pgPool ||
+  global.pgPool ??
   new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL?.includes("sslmode=require")
@@ -14,4 +14,6 @@ export const pool =
       : undefined,
   });
 
-if (process.env.NODE_ENV !== "production") global.pgPool = pool;
+if (process.env.NODE_ENV !== "production") {
+  global.pgPool = pool;
+}
