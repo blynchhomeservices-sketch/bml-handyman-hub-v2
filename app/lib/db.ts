@@ -1,19 +1,3 @@
-import { Pool } from "pg";
+import { sql } from "@vercel/postgres";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var pgPool: Pool | undefined;
-}
-
-export const pool =
-  global.pgPool ??
-  new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL?.includes("sslmode=require")
-      ? { rejectUnauthorized: false }
-      : undefined,
-  });
-
-if (process.env.NODE_ENV !== "production") {
-  global.pgPool = pool;
-}
+export { sql };
