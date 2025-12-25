@@ -14,9 +14,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Contractor insert error:", error);
+    console.error("Join contractor error:", error);
     return NextResponse.json(
-      { error: "Failed to save contractor" },
+      { error: "Failed to join contractor" },
       { status: 500 }
     );
   }
