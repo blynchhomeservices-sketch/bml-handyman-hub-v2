@@ -1,35 +1,22 @@
 import { NextResponse } from "next/server";
-import { pool } from "../../../lib/db";
+import { pool } from "@/app/lib/db";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-
-    const name = body.name?.toString().trim();
-    const email = body.email?.toString().trim();
-    const phone = body.phone?.toString().trim();
-    const trade = body.trade?.toString().trim();
-
-    if (!name || !email || !phone || !trade) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const { name, email, phone, trade, city } = body;
 
     await pool.query(
-      `
-      INSERT INTO contractors (name, email, phone, trade)
-      VALUES ($1, $2, $3, $4)
-      `,
-      [name, email, phone, trade]
+      `INSERT INTO contractors (name, email, phone, trade, city)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [name, email, phone, trade, city]
     );
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("CONTRACTORS API ERROR:", error);
+    console.error("Contractor insert error:", error);
     return NextResponse.json(
-      { error: "Server error" },
+      { error: "Failed to save contractor" },
       { status: 500 }
     );
   }
